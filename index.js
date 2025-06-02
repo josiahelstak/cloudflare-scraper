@@ -1,38 +1,38 @@
-const express = require('express');
-const puppeteer = require('puppeteer-core');
+const express = require("express");
+const puppeteer = require("puppeteer");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const CHROME_PATH = process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium';
-
-app.get('/scrape', async (req, res) => {
+app.get("/scrape", async (req, res) => {
   const targetUrl = req.query.url;
-
   if (!targetUrl) {
-    return res.status(400).send('Missing url parameter');
+    return res.status(400).json({ error: "Missing 'url' query parameter" });
   }
 
   try {
     const browser = await puppeteer.launch({
-      executablePath: CHROME_PATH,
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      headless: "new",
+      args: ["--no-sandbox", "--disable-setuid-sandbox"]
     });
 
     const page = await browser.newPage();
-    await page.goto(targetUrl, { waitUntil: 'networkidle0', timeout: 60000 });
+    await page.goto(targetUrl, { waitUntil: "networkidle2" });
 
-    const html = await page.content();
+    const content = await page.content();
     await browser.close();
 
-    res.send(html);
-  } catch (error) {
-    console.error('Scraping error:', error);
-    res.status(500).send('Scraping failed');
+    res.send(content);
+  } catch (err) {
+    console.error("Scraping error:", err);
+    res.status(500).json({ error: "Failed to scrape the page" });
   }
 });
 
+app.get("/", (req, res) => {
+  res.send("Cloudflare scraper is running.");
+});
+
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
