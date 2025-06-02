@@ -1,38 +1,38 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.get('/', (req, res) => {
-  res.send('Scraper is running');
-});
+const CHROME_PATH = process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium';
 
 app.get('/scrape', async (req, res) => {
-  const url = req.query.url;
-  if (!url) {
-    return res.status(400).send('Missing URL parameter');
+  const targetUrl = req.query.url;
+
+  if (!targetUrl) {
+    return res.status(400).send('Missing url parameter');
   }
 
   try {
     const browser = await puppeteer.launch({
-  headless: 'new',
-  args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
+      executablePath: CHROME_PATH,
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
 
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+    await page.goto(targetUrl, { waitUntil: 'networkidle0', timeout: 60000 });
 
-    const content = await page.content();
+    const html = await page.content();
     await browser.close();
 
-    res.send(content);
+    res.send(html);
   } catch (error) {
     console.error('Scraping error:', error);
-    res.status(500).send(`Scraping failed: ${error.message}`);
+    res.status(500).send('Scraping failed');
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
