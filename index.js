@@ -4,11 +4,14 @@ const puppeteer = require('puppeteer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.get('/scrape', async (req, res) => {
-  const targetUrl = req.query.url;
+app.get('/', (req, res) => {
+  res.send('Scraper is running');
+});
 
-  if (!targetUrl) {
-    return res.status(400).send('Missing "url" query parameter.');
+app.get('/scrape', async (req, res) => {
+  const url = req.query.url;
+  if (!url) {
+    return res.status(400).send('Missing URL parameter');
   }
 
   try {
@@ -18,16 +21,15 @@ app.get('/scrape', async (req, res) => {
     });
 
     const page = await browser.newPage();
-    await page.goto(targetUrl, { waitUntil: 'networkidle2', timeout: 60000 });
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
 
-    const html = await page.content();
-
+    const content = await page.content();
     await browser.close();
-    res.send(html);
 
+    res.send(content);
   } catch (error) {
-    console.error('Scraping error:', error.message);
-    res.status(500).send('Failed to scrape the page.');
+    console.error('Scraping error:', error);
+    res.status(500).send(`Scraping failed: ${error.message}`);
   }
 });
 
